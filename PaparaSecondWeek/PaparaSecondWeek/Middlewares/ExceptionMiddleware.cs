@@ -1,5 +1,8 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
+using PaparaSecondWeek.Models;
+using System;
+using System.Net;
 using System.Threading.Tasks;
 
 namespace PaparaSecondWeek.Middlewares
@@ -14,19 +17,28 @@ namespace PaparaSecondWeek.Middlewares
             _next = next;
         }
 
-        public Task Invoke(HttpContext httpContext)
+        public async Task Invoke(HttpContext httpContext)
         {
             try
             {
-
+                await _next(httpContext);
             }
-            catch (System.Exception)
+            catch (Exception ex)
             {
 
-                throw;
+                await HandleExceptionAsync(httpContext, ex);
             }
+        }
+        private static async Task HandleExceptionAsync(HttpContext httpContext, Exception ex)
+        {
 
-            return _next(httpContext);
+            httpContext.Response.ContentType = "application/json";
+            httpContext.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
+            await httpContext.Response.WriteAsync(new ErrorResultModel()
+            {
+                StatusCode = httpContext.Response.StatusCode,
+                Message = ex.Message
+            }.ToString());
         }
     }
 
